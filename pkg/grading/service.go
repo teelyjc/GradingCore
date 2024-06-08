@@ -129,13 +129,12 @@ func (s *Service) Grade(ctx context.Context, req *Request) (*Response, *Error) {
 		return resp.WrapError(StatusSystemFailContainer, err)
 	}
 
-	// TODO: Passed it from config
-	// defer func() {
-	// 	destroyErr := s.RunnerService.Destroy(ctx, runnerContainer)
-	// 	if destroyErr != nil {
-	// 		log.Println("failed to destroy container", runnerContainer.ContainerId, destroyErr)
-	// 	}
-	// }()
+	defer func() {
+		destroyErr := s.RunnerService.Destroy(ctx, runnerContainer)
+		if destroyErr != nil {
+			log.Println("failed to destroy container", runnerContainer.ContainerId, destroyErr)
+		}
+	}()
 
 	containerStartSuccess, err := runnerContainer.Wait(s.TimeLimitHardSystem)
 	if !containerStartSuccess {
