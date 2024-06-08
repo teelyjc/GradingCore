@@ -4,16 +4,16 @@ import (
 	"strings"
 )
 
-func Scrub(data []byte, autoTrimEnabled bool) []byte {
-	return []byte(ScrubString(string(data), autoTrimEnabled))
+func Scrub(data []byte, isAutoTrimEnabled bool) []byte {
+	return []byte(ScrubString(string(data), isAutoTrimEnabled))
 }
 
-func ScrubString(data string, autoTrimEnabled bool) string {
+func ScrubString(data string, isAutoTrimEnabled bool) string {
 	split := strings.Split(data, "\n")
 	splitlen := len(split)
 	for i := 0; i < splitlen; i++ {
 		split[i] = strings.TrimSuffix(split[i], "\r")
-		if autoTrimEnabled {
+		if isAutoTrimEnabled {
 			split[i] = strings.TrimSpace(split[i])
 		}
 	}
