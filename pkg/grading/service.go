@@ -4,16 +4,18 @@ import (
 	"GradingCore2/pkg/fetcher"
 	"GradingCore2/pkg/protorin"
 	"GradingCore2/pkg/runner"
+	"GradingCore2/pkg/scrubber"
 	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"log"
 	"strings"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type TestCase struct {
@@ -29,8 +31,9 @@ type ResultCase struct {
 }
 
 type RequestSettings struct {
-	TimeLimit   int `json:"timeLimit"`
-	MemoryLimit int `json:"memoryLimit"`
+	TimeLimit         int  `json:"timeLimit"`
+	MemoryLimit       int  `json:"memoryLimit"`
+	IsAutoTrimEnabled bool `josn:"isAutoTrimEnabled"`
 }
 
 type Request struct {
@@ -126,12 +129,13 @@ func (s *Service) Grade(ctx context.Context, req *Request) (*Response, *Error) {
 		return resp.WrapError(StatusSystemFailContainer, err)
 	}
 
-	defer func() {
-		destroyErr := s.RunnerService.Destroy(ctx, runnerContainer)
-		if destroyErr != nil {
-			log.Println("failed to destroy container", runnerContainer.ContainerId, destroyErr)
-		}
-	}()
+	// TODO: Passed it from config
+	// defer func() {
+	// 	destroyErr := s.RunnerService.Destroy(ctx, runnerContainer)
+	// 	if destroyErr != nil {
+	// 		log.Println("failed to destroy container", runnerContainer.ContainerId, destroyErr)
+	// 	}
+	// }()
 
 	containerStartSuccess, err := runnerContainer.Wait(s.TimeLimitHardSystem)
 	if !containerStartSuccess {
@@ -170,14 +174,21 @@ func (s *Service) Grade(ctx context.Context, req *Request) (*Response, *Error) {
 		}
 
 		outputExpectedHashProcessor := sha256.New()
-		outputExpectedHashProcessor.Write(outputExpected)
+		outputExpectedHashProcessor.Write(scrubber.Scrub([]byte(outputExpected), req.Settings.IsAutoTrimEnabled))
 		outputExpectedHash := outputExpectedHashProcessor.Sum(nil)
 
 		timedCaseContext, cancelTimedCaseContext := context.WithTimeoutCause(ctx, caseTimeLimitHard, &Error{ErrorCode: StatusFailTimeoutHard, Wrap: nil})
 
 		hashOnly := false
 		timeStart := time.Now()
-		data, err := runnerContainer.GrpcClient.Test(timedCaseContext, &protorin.TestContext{Source: input, OptHashOnly: &hashOnly})
+		data, err := runnerContainer.GrpcClient.Test(
+			timedCaseContext,
+			&protorin.TestContext{
+				Source:            input,
+				OptHashOnly:       &hashOnly,
+				IsAutoTrimEnabled: &req.Settings.IsAutoTrimEnabled,
+			},
+		)
 		cancelTimedCaseContext()
 
 		if err != nil {
@@ -188,7 +199,7 @@ func (s *Service) Grade(ctx context.Context, req *Request) (*Response, *Error) {
 				return resp.WrapError(StatusSystemFail, err)
 			}
 		}
-		timeElapse := time.Now().Sub(timeStart)
+		timeElapse := time.Since(timeStart)
 		memoryConsumed := data.GetMemory()
 
 		caseTimeExceed := timeElapse > caseTimeLimitSoft
