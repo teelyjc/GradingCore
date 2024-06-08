@@ -24,7 +24,6 @@ const (
 )
 
 type Error struct {
-	error
 	ErrorCode StatusCode
 	Wrap      error
 }
