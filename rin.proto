@@ -1,3 +1,4 @@
+syntax = "proto2";
 option go_package = "./protorin";
 
 service Rin {
@@ -17,7 +18,8 @@ message Source {
 
 message TestContext {
   required bytes source = 1;
-  optional bool opt_hash_only = 2;
+  required bool is_auto_trim_enabled = 2;
+  optional bool opt_hash_only = 3;
 }
 
 message TestResult {
