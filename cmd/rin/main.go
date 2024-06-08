@@ -8,13 +8,14 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"google.golang.org/grpc"
 	"log"
 	"net"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"google.golang.org/grpc"
 )
 
 type Handler struct {
@@ -90,7 +91,7 @@ func (h *Handler) Test(_ context.Context, src *protorin.TestContext) (*protorin.
 	}
 
 	dataBytes := buffer.Bytes()
-	dataBytes = scrubber.Scrub(dataBytes)
+	dataBytes = scrubber.Scrub(dataBytes, src.GetIsAutoTrimEnabled())
 	hashAlgo := sha256.New()
 	hashAlgo.Write(dataBytes)
 	hashBytes := hashAlgo.Sum(nil)
