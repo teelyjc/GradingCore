@@ -18,8 +18,8 @@ message Source {
 
 message TestContext {
   bytes source = 1;
-  bool is_auto_trim_enabled = 2;
-  optional bool opt_hash_only = 3;
+  optional bool opt_hash_only = 2;
+  bool is_auto_trim_enabled = 3;
 }
 
 message TestResult {
