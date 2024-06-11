@@ -150,7 +150,7 @@ func (s *Service) Grade(ctx context.Context, req *Request) (*Response, *Error) {
 	if compile != nil && compile.Data != nil {
 		resp.CompileOutput = string(compile.Data)
 	}
-	if err != nil || !*compile.Success {
+	if err != nil || !compile.Success {
 		fromError, ok := status.FromError(err)
 		if ok && fromError.Code() == codes.DeadlineExceeded {
 			return resp.WrapError(StatusFailCompilationTimeout, err)
@@ -185,7 +185,7 @@ func (s *Service) Grade(ctx context.Context, req *Request) (*Response, *Error) {
 			&protorin.TestContext{
 				Source:            input,
 				OptHashOnly:       &hashOnly,
-				IsAutoTrimEnabled: &req.Settings.IsAutoTrimEnabled,
+				IsAutoTrimEnabled: req.Settings.IsAutoTrimEnabled,
 			},
 		)
 		cancelTimedCaseContext()
@@ -208,7 +208,7 @@ func (s *Service) Grade(ctx context.Context, req *Request) (*Response, *Error) {
 		memoryExceedAtLeastOnce = memoryExceedAtLeastOnce || caseMemoryExceed
 
 		resultEntry := ResultCase{
-			Pass:   !caseTimeExceed && bytes.Equal(data.Hash, outputExpectedHash),
+			Pass:   !caseTimeExceed && !caseMemoryExceed && bytes.Equal(data.Hash, outputExpectedHash),
 			Hash:   base64.StdEncoding.EncodeToString(data.Hash),
 			Time:   timeElapse.Milliseconds(),
 			Memory: data.GetMemory(), // proto will default to 0
