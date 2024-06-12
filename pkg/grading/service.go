@@ -185,7 +185,7 @@ func (s *Service) Grade(ctx context.Context, req *Request) (*Response, *Error) {
 			&protorin.TestContext{
 				Source:            input,
 				OptHashOnly:       &hashOnly,
-				IsAutoTrimEnabled: req.Settings.IsAutoTrimEnabled,
+				IsAutoTrimEnabled: &req.Settings.IsAutoTrimEnabled,
 			},
 		)
 		cancelTimedCaseContext()
