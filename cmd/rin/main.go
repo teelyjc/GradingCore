@@ -50,7 +50,7 @@ func (h *Handler) Compile(_ context.Context, src *protorin.Source) (*protorin.Co
 	dataBytes := buffer.Bytes()
 
 	success := err == nil
-	result := protorin.CompileResult{Data: dataBytes, Success: &success}
+	result := protorin.CompileResult{Data: dataBytes, Success: success}
 
 	log.Println(string(dataBytes), err)
 	return &result, nil
